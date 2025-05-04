@@ -4,7 +4,7 @@ import SubmitButton from "./SubmitButton";
 import { Feather, FontAwesome } from "@expo/vector-icons";
 import { validateInput } from "../utils/actions/formAction";
 import { reducer } from "../utils/reducers/formReducer";
-import { signUp } from "../utils/actions/authAction";
+import { signUp } from "../utils/actions/authActions";
 import { ActivityIndicator, Alert } from "react-native";
 import colors from "../constants/colors";
 import { useDispatch, useSelector } from "react-redux";

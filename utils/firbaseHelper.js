@@ -8,13 +8,14 @@ export const getFirebaseApp = () => {
   // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
-    apiKey: "AIzaSyAr3neUNJ1cvjjjAUO4LQ49Lf1bwYGkAlU",
-    authDomain: "cochat-56d81.firebaseapp.com",
-    projectId: "cochat-56d81",
-    storageBucket: "cochat-56d81.firebasestorage.app",
-    messagingSenderId: "240163826847",
-    appId: "1:240163826847:web:4a65906e792468e322c6aa",
-    measurementId: "G-TLLRQGQ48E",
+    apiKey: "AIzaSyC6rSdaQYuHkZ2QikTOrDORxePa460Rb_c",
+    authDomain: "cochat-cbec2.firebaseapp.com",
+    databaseURL: "https://cochat-cbec2-default-rtdb.firebaseio.com",
+    projectId: "cochat-cbec2",
+    storageBucket: "cochat-cbec2.firebasestorage.app",
+    messagingSenderId: "49970901357",
+    appId: "1:49970901357:web:f90fa5367c6c153e3e6a64",
+    measurementId: "G-H1YGL7K1WC",
   };
 
   // Initialize Firebase
