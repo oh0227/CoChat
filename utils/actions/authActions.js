@@ -4,10 +4,12 @@ import {
   getAuth,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { child, getDatabase, set, ref } from "firebase/database";
+import { child, getDatabase, set, ref, update } from "firebase/database";
 import { authenticate } from "../../store/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserData } from "./userActions";
+
+let timer;
 
 export const signUp = ({ firstName, lastName, email, password }) => {
   return async (dispatch) => {
@@ -24,11 +26,17 @@ export const signUp = ({ firstName, lastName, email, password }) => {
       const { accessToken, expirationTime } = stsTokenManager;
 
       const expiryDate = new Date(expirationTime);
+      const timeNow = new Date();
+      const millisecondsUntilExpiry = expiryDate - timeNow;
 
       const userData = await createUser(firstName, lastName, email, uid);
 
       dispatch(authenticate({ token: accessToken, userData }));
       saveDataToStorage(accessToken, uid, expiryDate);
+
+      timer = setTimeout(() => {
+        dispatch(userLogout());
+      }, millisecondsUntilExpiry);
     } catch (error) {
       console.log(error);
       const errorCode = error.code;
@@ -73,6 +81,23 @@ export const signIn = ({ email, password }) => {
       throw new Error(message);
     }
   };
+};
+
+export const userLogout = () => {
+  return async (dispatch) => {
+    AsyncStorage.clear();
+    clearTimeout(timer);
+    dispatch(logout());
+  };
+};
+
+export const updateSignedInUserData = async (userId, newData) => {
+  const firstLast = `${newData.firstName} ${newData.lastName}`.toLowerCase();
+  newData.firstLast = firstLast;
+
+  const dbRef = ref(getDatabase());
+  const childRef = child(dbRef, `users/${userId}`);
+  await update(childRef, newData);
 };
 
 const createUser = async (firstName, lastName, email, userId) => {
