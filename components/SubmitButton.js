@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
   },
 });
 
