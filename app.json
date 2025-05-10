@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TestProject",
+    "name": "CoChat",
     "slug": "TestProject",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "CoChat",
+      "bundleIdentifier": "com.oznwoo.cochat",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -28,9 +28,7 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": [
-      "expo-font"
-    ],
+    "plugins": ["expo-font"],
     "extra": {
       "eas": {
         "projectId": "e8426cc6-e2ca-4be4-9b9f-56d15032d266"

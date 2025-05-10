@@ -21,3 +21,11 @@ export const getFirebaseApp = () => {
   // Initialize Firebase
   return initializeApp(firebaseConfig);
 };
+
+export const getFirebaseAuth = (app) => {
+  const auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+
+  return auth;
+};

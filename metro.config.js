@@ -1,7 +1,21 @@
-const { getDefaultConfig } = require("@expo/metro-config");
+// metro.config.js
+const { getDefaultConfig } = require("expo/metro-config");
 
-const defaultConfig = getDefaultConfig(__dirname);
+module.exports = (() => {
+  const config = getDefaultConfig(__dirname);
+  const { transformer, resolver } = config;
 
-defaultConfig.resolver.sourceExts.push("cjs");
+  config.transformer = {
+    ...transformer,
+    babelTransformerPath: require.resolve("react-native-svg-transformer"),
+  };
 
-module.exports = defaultConfig;
+  config.resolver = {
+    ...resolver,
+    assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
+    sourceExts: [...resolver.sourceExts, "svg", "cjs"],
+    unstable_enablePackageExports: true, // 🔥 다시 true로!
+  };
+
+  return config;
+})();

@@ -3,6 +3,8 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   signInWithEmailAndPassword,
+  initializeAuth,
+  getReactNativePersistence,
 } from "firebase/auth";
 import { child, getDatabase, set, ref, update } from "firebase/database";
 import { authenticate, logout } from "../../store/authSlice";
@@ -55,9 +57,9 @@ export const signUp = ({ firstName, lastName, email, password }) => {
 export const signIn = ({ email, password }) => {
   return async (dispatch) => {
     const app = getFirebaseApp();
-    const auth = getAuth(app);
 
     try {
+      const auth = getAuth(app);
       const result = await signInWithEmailAndPassword(auth, email, password);
       const { uid, stsTokenManager } = result.user;
       const { accessToken, expirationTime } = stsTokenManager;
