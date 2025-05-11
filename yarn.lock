@@ -2069,7 +2069,7 @@
     "@react-navigation/elements" "^2.4.1"
     warn-once "^0.1.1"
 
-"@react-navigation/native@^7.1.5", "@react-navigation/native@^7.1.8":
+"@react-navigation/native@^7.1.8":
   version "7.1.8"
   resolved "https://registry.npmjs.org/@react-navigation/native/-/native-7.1.8.tgz"
   integrity sha512-ryKd/qNigi1pUp6mBb2pq75ese7AZ/Cl3xEmTG6PcUGMfMqAMMrmmVbgiys0h8zCGY2tSBSqnDHbGW1/ZtOoKg==

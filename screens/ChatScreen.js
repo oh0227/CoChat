@@ -1,13 +1,12 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  Button,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ImageBackground } from "react-native";
@@ -15,11 +14,50 @@ import Feather from "@expo/vector-icons/Feather";
 
 import backgroundImage from "../assets/images/droplet.jpeg";
 import colors from "../constants/colors";
+import { useSelector } from "react-redux";
+import PageContainer from "../components/PageContainer";
+import Bubble from "../components/Bubble";
+import { createChat } from "../utils/actions/chatActions";
 
 const ChatScreen = (props) => {
-  const [messageText, setMessageText] = useState("");
+  const userData = useSelector((state) => state.auth.userData);
+  const storedUsers = useSelector((state) => state.users.storedUsers);
 
-  const sendMessage = useCallback(() => {
+  const [chatUsers, setChatUsers] = useState([]);
+  const [messageText, setMessageText] = useState("");
+  const [chatId, setChatId] = useState(props.route?.params?.chatId);
+
+  const chatData = props.route?.params?.newChatData;
+
+  const getChatTitleFromName = () => {
+    const otherUserId = chatUsers.find((uid) => uid !== userData.userId);
+    const otherUserData = storedUsers[otherUserId];
+
+    return (
+      otherUserData && `${otherUserData.firstName} ${otherUserData.lastName}`
+    );
+  };
+
+  useEffect(() => {
+    props.navigation.setOptions({
+      headerTitle: getChatTitleFromName(),
+    });
+
+    setChatUsers(chatData.users);
+  }, [chatUsers]);
+
+  const sendMessage = useCallback(async () => {
+    try {
+      let id = chatId;
+      if (!id) {
+        // No chat Id. Create the chat
+        id = await createChat(userData.userId, props.route.params.newChatData);
+        setChatId(id);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+
     setMessageText("");
   }, [messageText]);
 
@@ -33,7 +71,13 @@ const ChatScreen = (props) => {
         <ImageBackground
           source={backgroundImage}
           style={styles.backgroundImage}
-        ></ImageBackground>
+        >
+          <PageContainer style={{ backgroundColor: "transparent" }}>
+            {!chatId && (
+              <Bubble text="This is a new chat. Say hi!" type="system" />
+            )}
+          </PageContainer>
+        </ImageBackground>
 
         <View style={styles.inputContainer}>
           <TouchableOpacity
