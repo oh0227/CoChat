@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Button, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import colors from "../constants/colors";
 
 const ChatListScreen = (props) => {
   useEffect(() => {
@@ -10,7 +11,7 @@ const ChatListScreen = (props) => {
           onPress={() => props.navigation.navigate("NewChat")}
           style={{ marginRight: 16 }}
         >
-          <Ionicons name="create-outline" size={24} color="black" />
+          <Ionicons name="create-outline" size={24} color={colors.blue} />
         </Pressable>
       ),
     });

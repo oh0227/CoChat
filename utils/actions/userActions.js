@@ -1,4 +1,13 @@
-import { get, getDatabase, ref, child } from "firebase/database";
+import {
+  get,
+  getDatabase,
+  ref,
+  query,
+  child,
+  startAt,
+  endAt,
+  orderByChild,
+} from "firebase/database";
 import { getFirebaseApp } from "../firbaseHelper";
 
 export const getUserData = async (userId) => {
@@ -11,5 +20,33 @@ export const getUserData = async (userId) => {
     return snapshot.val();
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const searchUsers = async (queryText) => {
+  const searchTerm = queryText.toLowerCase();
+
+  try {
+    const app = getFirebaseApp();
+    const dbRef = ref(getDatabase(app));
+    const userRef = child(dbRef, "users");
+
+    const queryRef = query(
+      userRef,
+      orderByChild("firstLast"),
+      startAt(searchTerm),
+      endAt(searchTerm + "\uf8ff")
+    );
+
+    const snapshot = await get(queryRef);
+
+    if (snapshot.exists()) {
+      return snapshot.val();
+    }
+
+    return {};
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 };
