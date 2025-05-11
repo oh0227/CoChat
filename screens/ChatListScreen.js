@@ -1,24 +1,20 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
-import { HeaderButtons, Item } from "react-navigation-header-buttons";
-import CustomHeaderButton from "../components/CustomHeaderButton";
+import { View, Text, StyleSheet, Button, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const ChatListScreen = (props) => {
   useEffect(() => {
     props.navigation.setOptions({
-      headerRight: () => {
-        return (
-          <HeaderButtons HeaderButtonComponent={CustomHeaderButton}>
-            <Item
-              title="New chat"
-              iconName="create-outline"
-              onPress={() => props.navigation.navigate("NewChat")}
-            />
-          </HeaderButtons>
-        );
-      },
+      headerRight: () => (
+        <Pressable
+          onPress={() => props.navigation.navigate("NewChat")}
+          style={{ marginRight: 16 }}
+        >
+          <Ionicons name="create-outline" size={24} color="black" />
+        </Pressable>
+      ),
     });
-  }, []);
+  }, [props.navigation]);
 
   return (
     <View style={styles.container}>

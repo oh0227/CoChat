@@ -1,7 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
-import { HeaderButtons, Item } from "react-navigation-header-buttons";
-import CustomHeaderButton from "../components/CustomHeaderButton";
+import { View, Text, StyleSheet, TextInput, Pressable } from "react-native";
 import PageContainer from "../components/PageContainer";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import colors from "../constants/colors";
@@ -9,16 +7,17 @@ import colors from "../constants/colors";
 const NewChatScreen = (props) => {
   useEffect(() => {
     props.navigation.setOptions({
-      headerLeft: () => {
-        return (
-          <HeaderButtons HeaderButtonComponent={CustomHeaderButton}>
-            <Item title="Close" onPress={() => props.navigation.goBack()} />
-          </HeaderButtons>
-        );
-      },
+      headerLeft: () => (
+        <Pressable
+          onPress={() => props.navigation.goBack()}
+          style={{ marginLeft: 16 }} // 필요시 여백 조정
+        >
+          <FontAwesome name="close" size={23} color={colors.blue} />
+        </Pressable>
+      ),
       headerTitle: "New Chat",
     });
-  }, []);
+  }, [props.navigation]);
 
   return (
     <PageContainer>
@@ -47,7 +46,7 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     marginLeft: 8,
-    FontSize: 15,
+    fontSize: 15,
     width: "100%",
   },
 });

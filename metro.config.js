@@ -1,21 +1,22 @@
-// metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
 
 module.exports = (() => {
   const config = getDefaultConfig(__dirname);
+
   const { transformer, resolver } = config;
 
-  config.transformer = {
-    ...transformer,
-    babelTransformerPath: require.resolve("react-native-svg-transformer"),
-  };
+  // Firebase 및 CommonJS 호환
+  resolver.sourceExts.push("cjs");
 
-  config.resolver = {
-    ...resolver,
-    assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
-    sourceExts: [...resolver.sourceExts, "svg", "cjs"],
-    unstable_enablePackageExports: true, // 🔥 다시 true로!
-  };
+  // SVG 지원
+  transformer.babelTransformerPath = require.resolve(
+    "react-native-svg-transformer"
+  );
+  resolver.assetExts = resolver.assetExts.filter((ext) => ext !== "svg");
+  resolver.sourceExts.push("svg");
+
+  // Package Exports 사용 비활성화 (일부 라이브러리 충돌 방지)
+  resolver.unstable_enablePackageExports = false;
 
   return config;
 })();
