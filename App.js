@@ -7,9 +7,7 @@ import * as Font from "expo-font";
 import AppNavigator from "./navigation/AppNavigator";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// AsyncStorage.clear();
+import { MenuProvider } from "react-native-popup-menu";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,7 +55,9 @@ const App = () => {
   return (
     <Provider store={store}>
       <SafeAreaProvider style={styles.container} onLayout={onLayout}>
-        <AppNavigator />
+        <MenuProvider>
+          <AppNavigator />
+        </MenuProvider>
       </SafeAreaProvider>
     </Provider>
   );

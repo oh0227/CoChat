@@ -6,9 +6,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   FlatList,
-  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ImageBackground } from "react-native";
@@ -48,8 +46,6 @@ const ChatScreen = (props) => {
 
     return messageList;
   });
-
-  console.log(chatMessages);
 
   const chatData =
     (chatId && storedChats[chatId]) || props.route?.params?.newChatData;
