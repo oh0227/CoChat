@@ -1,52 +1,42 @@
-import {
-  get,
-  getDatabase,
-  ref,
-  query,
-  child,
-  startAt,
-  endAt,
-  orderByChild,
-} from "firebase/database";
-import { getFirebaseApp } from "../firbaseHelper";
+import axios from "axios";
+import BASE_URL from "../../constants/base_url";
 
-export const getUserData = async (userId) => {
+export const getUserData = async (userId, token) => {
   try {
-    const app = getFirebaseApp();
-    const dbRef = ref(getDatabase(app));
-    const userRef = child(dbRef, `users/${userId}`);
+    const response = await axios.get(`${BASE_URL}/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    const snapshot = await get(userRef);
-    return snapshot.val();
+    return response.data;
   } catch (error) {
-    console.log(error);
+    console.error(
+      "유저 데이터 조회 실패:",
+      error.response?.data || error.message
+    );
+    return null;
   }
 };
 
-export const searchUsers = async (queryText) => {
-  const searchTerm = queryText.toLowerCase();
-
+export const searchUsers = async (queryText, token) => {
   try {
-    const app = getFirebaseApp();
-    const dbRef = ref(getDatabase(app));
-    const userRef = child(dbRef, "users");
+    const response = await axios.get(`${BASE_URL}/user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    const queryRef = query(
-      userRef,
-      orderByChild("firstLast"),
-      startAt(searchTerm),
-      endAt(searchTerm + "\uf8ff")
+    const allUsers = response.data;
+    const lowerQuery = queryText.toLowerCase();
+
+    const filtered = allUsers.filter((user) =>
+      (user.first_name + user.last_name).toLowerCase().includes(lowerQuery)
     );
 
-    const snapshot = await get(queryRef);
-
-    if (snapshot.exists()) {
-      return snapshot.val();
-    }
-
-    return {};
+    return filtered;
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("유저 검색 실패:", error.response?.data || error.message);
+    return [];
   }
 };

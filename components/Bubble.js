@@ -105,7 +105,7 @@ const Bubble = (props) => {
         <View style={bubbleStyle}>
           <Text style={textStyle}>{text}</Text>
 
-          {dateString && (
+          {date && (
             <View style={styles.timeContainer}>
               {isStarred && (
                 <FontAwesome

@@ -23,12 +23,15 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.oznwoo.cochat"
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font"
+    ],
     "extra": {
       "eas": {
         "projectId": "e8426cc6-e2ca-4be4-9b9f-56d15032d266"

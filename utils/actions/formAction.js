@@ -2,7 +2,6 @@ import {
   validateString,
   validateEmail,
   validatePassword,
-  validateLength,
 } from "../validationContraints";
 
 export const validateInput = (inputId, inputValue) => {
@@ -12,7 +11,5 @@ export const validateInput = (inputId, inputValue) => {
     return validateEmail(inputId, inputValue);
   } else if (inputId === "password") {
     return validatePassword(inputId, inputValue);
-  } else if (inputId === "about") {
-    return validateLength(inputId, inputValue, 0, 150, true);
   }
 };

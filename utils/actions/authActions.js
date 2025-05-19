@@ -1,54 +1,27 @@
-import { getFirebaseApp } from "../firbaseHelper";
-import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  signInWithEmailAndPassword,
-  initializeAuth,
-  getReactNativePersistence,
-} from "firebase/auth";
-import { child, getDatabase, set, ref, update } from "firebase/database";
-import { authenticate, logout } from "../../store/authSlice";
+import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authenticate, logout } from "../../store/authSlice";
+import BASE_URL from "../../constants/base_url";
 import { getUserData } from "./userActions";
 
 let timer;
 
 export const signUp = ({ firstName, lastName, email, password }) => {
   return async (dispatch) => {
-    const app = getFirebaseApp();
-    const auth = getAuth(app);
-
     try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
+      // 1. 회원가입
+      const response = await axios.post(`${BASE_URL}/user/`, {
+        first_name: firstName,
+        last_name: lastName,
         email,
-        password
-      );
-      const { uid, stsTokenManager } = result.user;
-      const { accessToken, expirationTime } = stsTokenManager;
+        password,
+      });
 
-      const expiryDate = new Date(expirationTime);
-      const timeNow = new Date();
-      const millisecondsUntilExpiry = expiryDate - timeNow;
-
-      const userData = await createUser(firstName, lastName, email, uid);
-
-      dispatch(authenticate({ token: accessToken, userData }));
-      saveDataToStorage(accessToken, uid, expiryDate);
-
-      timer = setTimeout(() => {
-        dispatch(userLogout());
-      }, millisecondsUntilExpiry);
+      // 2. 회원가입 성공 후 바로 로그인
+      dispatch(signIn({ email, password }));
     } catch (error) {
-      console.log(error);
-      const errorCode = error.code;
-
-      let message = "Something went wrong.";
-
-      if (errorCode === "auth/email-already-in-use") {
-        message = "This email is already in use";
-      }
-
+      const message =
+        error.response?.data?.detail || "회원가입 실패. 다시 시도하세요.";
       throw new Error(message);
     }
   };
@@ -56,83 +29,79 @@ export const signUp = ({ firstName, lastName, email, password }) => {
 
 export const signIn = ({ email, password }) => {
   return async (dispatch) => {
-    const app = getFirebaseApp();
-
     try {
-      const auth = getAuth(app);
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const { uid, stsTokenManager } = result.user;
-      const { accessToken, expirationTime } = stsTokenManager;
+      const params = new URLSearchParams();
+      params.append("username", email);
+      params.append("password", password);
 
-      const expiryDate = new Date(expirationTime);
-      const timeNow = new Date();
-      const millisecondsUntilExpiry = expiryDate - timeNow;
+      const response = await axios.post(`${BASE_URL}/token`, params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-      const userData = await getUserData(uid);
+      const { access_token, token_type, user_id } = response.data;
 
-      dispatch(authenticate({ token: accessToken, userData }));
-      saveDataToStorage(accessToken, uid, expiryDate);
+      const expiryDate = new Date(
+        new Date().getTime() + 60 * 60 * 1000 // 1시간짜리 JWT 토큰 가정
+      );
+
+      const userData = await getUserData(user_id, access_token);
+
+      dispatch(
+        authenticate({
+          token: access_token,
+          userData,
+        })
+      );
+
+      saveDataToStorage(access_token, email, expiryDate);
 
       timer = setTimeout(() => {
         dispatch(userLogout());
-      }, millisecondsUntilExpiry);
+      }, 60 * 60 * 1000);
     } catch (error) {
       console.log(error);
-      const errorCode = error.code;
-
-      let message = "Something went wrong.";
-
-      if (errorCode === "auth/email-already-in-use") {
-        message = "This email is already in use";
-      }
-
-      throw new Error(message);
     }
   };
 };
 
 export const userLogout = () => {
   return async (dispatch) => {
-    AsyncStorage.clear();
+    await AsyncStorage.clear();
     clearTimeout(timer);
     dispatch(logout());
   };
 };
 
-export const updateSignedInUserData = async (userId, newData) => {
-  if (newData.firstName && newData.lastName) {
-    const firstLast = `${newData.firstName} ${newData.lastName}`.toLowerCase();
-    newData.firstLast = firstLast;
+export const updateSignedInUserData = async (userId, newData, token) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/user/${userId}/update`,
+      {
+        first_name: newData.first_name,
+        last_name: newData.last_name,
+        email: newData.email,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.log(error);
   }
-
-  const dbRef = ref(getDatabase());
-  const childRef = child(dbRef, `users/${userId}`);
-  await update(childRef, newData);
 };
 
-const createUser = async (firstName, lastName, email, userId) => {
-  const firstLast = `${firstName} ${lastName}`.toLowerCase();
-  const userData = {
-    firstName,
-    lastName,
-    firstLast,
-    email,
-    userId,
-    signUpDate: new Date().toISOString(),
-  };
-
-  const dbRef = ref(getDatabase());
-  const childRef = child(dbRef, `users/${userId}`);
-  await set(childRef, userData);
-  return userData;
-};
-
-const saveDataToStorage = (token, userId, expiryDate) => {
+const saveDataToStorage = (token, email, expiryDate) => {
   AsyncStorage.setItem(
     "userData",
     JSON.stringify({
       token,
-      userId,
+      email,
       expiryDate: expiryDate.toISOString(),
     })
   );

@@ -25,25 +25,29 @@ import ProfileImage from "../components/ProfileImage";
 const SettingsScreen = (props) => {
   const dispatch = useDispatch();
 
-  const userData = useSelector((state) => state.auth.userData);
+  // const userData = useSelector((state) => state.auth.userData);
+  const userData = {
+    first_name: "Jinwoo",
+    last_name: "Oh",
+    email: "oh7895@naver.com",
+  };
 
-  const firstName = userData.firstName || "";
-  const lastName = userData.lastName || "";
-  const email = userData.email || "";
-  const about = userData.about || "";
+  const token = useSelector((state) => state.auth.token);
+
+  const firstName = userData?.first_name || "";
+  const lastName = userData?.last_name || "";
+  const email = userData?.email || "";
 
   const initialState = {
     inputValues: {
-      firstName,
-      lastName,
+      first_name: firstName,
+      last_name: lastName,
       email,
-      about,
     },
     inputValidities: {
-      firstName: undefined,
-      lastName: undefined,
+      first_name: undefined,
+      last_name: undefined,
       email: undefined,
-      about: undefined,
     },
     formIsValid: false,
   };
@@ -69,7 +73,7 @@ const SettingsScreen = (props) => {
 
     try {
       setIsLoading(true);
-      await updateSignedInUserData(userData.userId, updatedValues);
+      await updateSignedInUserData(userData.id, updatedValues, token);
       dispatch(updateLoggedInUserData({ newData: updatedValues }));
 
       setShowSeccessMessage(true);
@@ -86,12 +90,12 @@ const SettingsScreen = (props) => {
 
   const hasChanges = () => {
     const currentValues = formState.inputValues;
+    console.log(currentValues);
 
     return (
-      currentValues.firstName != firstName ||
-      currentValues.lastName != lastName ||
-      currentValues.email != email ||
-      currentValues.about != about
+      currentValues.first_name != firstName ||
+      currentValues.last_name != lastName ||
+      currentValues.email != email
     );
   };
 
@@ -108,24 +112,24 @@ const SettingsScreen = (props) => {
         />
 
         <Input
-          id="firstName"
+          id="first_name"
           label="First name"
           icon="user-o"
           iconPack={FontAwesome}
           onInputChanged={inputChangedHandler}
           autoCapitalize="none"
-          errorText={formState.inputValidities["firstName"]}
-          initialValue={userData.firstName}
+          errorText={formState.inputValidities["first_name"]}
+          initialValue={userData.first_name}
         />
         <Input
-          id="lastName"
+          id="last_name"
           label="Last name"
           icon="user-o"
           iconPack={FontAwesome}
           onInputChanged={inputChangedHandler}
           autoCapitalize="none"
-          errorText={formState.inputValidities["lastName"]}
-          initialValue={userData.lastName}
+          errorText={formState.inputValidities["last_name"]}
+          initialValue={userData.last_name}
         />
         <Input
           id="email"
@@ -137,17 +141,6 @@ const SettingsScreen = (props) => {
           autoCapitalize="none"
           errorText={formState.inputValidities["email"]}
           initialValue={userData.email}
-        />
-
-        <Input
-          id="about"
-          label="About"
-          icon="user-o"
-          iconPack={FontAwesome}
-          onInputChanged={inputChangedHandler}
-          autoCapitalize="none"
-          errorText={formState.inputValidities["about"]}
-          initialValue={userData.about}
         />
 
         <View style={{ marginTop: 20, width: "100%" }}>

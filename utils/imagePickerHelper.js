@@ -1,14 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
-import { getFirebaseApp } from "./firbaseHelper";
-import uuid from "react-native-uuid";
-
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from "firebase/storage";
+import axios from "axios";
+import BASE_URL from "../constants/base_url"; // 예: http://localhost:8000
 
 export const launchImagePicker = async () => {
   await checkMediaPermissions();
@@ -25,33 +18,31 @@ export const launchImagePicker = async () => {
   }
 };
 
-export const uploadImageAsync = async (uri) => {
-  const app = getFirebaseApp();
+export const uploadImageAsync = async (uri, token) => {
+  const formData = new FormData();
+  const filename = uri.split("/").pop();
+  const match = /\.(\w+)$/.exec(filename ?? "");
+  const type = match ? `image/${match[1]}` : `image`;
 
-  const blob = await new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = function () {
-      resolve(xhr.response);
-    };
-
-    xhr.onerror = function (e) {
-      console.log(e);
-      reject(new TypeError("Network request failed"));
-    };
-
-    xhr.responseType = "blob";
-    xhr.open("GET", uri, true);
-    xhr.send();
+  formData.append("file", {
+    uri,
+    name: filename,
+    type,
   });
 
-  const pathFolder = "profilePics";
-  const storageRef = ref(getStorage(app), `${pathFolder}/${uuid.v4()}`);
+  try {
+    const response = await axios.post(`${BASE_URL}/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`, // 필요 시
+      },
+    });
 
-  await uploadBytesResumable(storageRef, blob);
-
-  blob.close();
-
-  return await getDownloadURL(storageRef);
+    return response.data.url; // 백엔드에서 반환하는 이미지 URL
+  } catch (error) {
+    console.error("이미지 업로드 실패:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 const checkMediaPermissions = async () => {

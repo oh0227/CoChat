@@ -1,16 +1,7 @@
-import {
-  child,
-  get,
-  getDatabase,
-  push,
-  ref,
-  remove,
-  set,
-  update,
-} from "firebase/database";
-import { getFirebaseApp } from "../firbaseHelper";
+import axios from "axios";
+import { BASE_URL } from "../../constants/base_url"; // ex. http://localhost:8000
 
-export const createChat = async (loggedInUserId, chatData) => {
+export const createChat = async (loggedInUserId, chatData, token) => {
   const newChatData = {
     ...chatData,
     createdBy: loggedInUserId,
@@ -19,65 +10,54 @@ export const createChat = async (loggedInUserId, chatData) => {
     updatedAt: new Date().toISOString(),
   };
 
-  const app = getFirebaseApp();
-  const dbRef = ref(getDatabase(app));
-  const newChat = await push(child(dbRef, "chats"), newChatData);
+  try {
+    const response = await axios.post(`${BASE_URL}/chats/`, newChatData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  const chatUsers = newChatData.users;
-  for (let i = 0; i < chatUsers.length; i++) {
-    const userId = chatUsers[i];
-    await push(child(dbRef, `userChats/${userId}`), newChat.key);
+    return response.data.chat_id; // 백엔드가 chat_id 리턴한다고 가정
+  } catch (error) {
+    console.error("createChat error:", error.response?.data || error.message);
+    throw error;
   }
-
-  return newChat.key;
 };
 
-export const sendTextMessage = async (chatId, senderId, messageText) => {
-  const app = getFirebaseApp();
-  const dbRef = ref(getDatabase(app));
-  const messagesRef = child(dbRef, `messages/${chatId}`);
-
+export const sendTextMessage = async (chatId, senderId, messageText, token) => {
   const messageData = {
-    sentBy: senderId,
-    sentAt: new Date().toISOString(),
+    sender_id: senderId,
     text: messageText,
   };
 
-  await push(messagesRef, messageData);
-
-  const chatRef = child(dbRef, `chats/${chatId}`);
-  await update(chatRef, {
-    updatedBy: senderId,
-    updatedAt: new Date().toISOString(),
-    latestMessageText: messageText,
-  });
+  try {
+    await axios.post(`${BASE_URL}/chats/${chatId}/send`, messageData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "sendTextMessage error:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 };
 
-export const starMessage = async (messageId, chatId, userId) => {
+export const starMessage = async (messageId, chatId, userId, token) => {
   try {
-    const app = getFirebaseApp();
-    const dbRef = ref(getDatabase(app));
-    const childRef = child(
-      dbRef,
-      `userStarredMessages/${userId}/${chatId}/${messageId}`
+    await axios.post(
+      `${BASE_URL}/messages/${chatId}/${messageId}/star`,
+      { user_id: userId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
-
-    const snapshot = await get(childRef);
-
-    if (snapshot.exists()) {
-      // Starred item exists - Un-star
-      await remove(childRef);
-    } else {
-      // Starred item does not exist - star
-      const starredMessageData = {
-        messageId,
-        chatId,
-        starredAt: new Date().toISOString(),
-      };
-
-      await set(childRef, starredMessageData);
-    }
   } catch (error) {
-    console.log(error);
+    console.error("starMessage error:", error.response?.data || error.message);
+    throw error;
   }
 };

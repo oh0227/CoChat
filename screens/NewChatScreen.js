@@ -106,7 +106,6 @@ const NewChatScreen = (props) => {
             return (
               <DataItem
                 title={`${userData.firstName} ${userData.lastName}`}
-                subTitle={userData.about}
                 image={userData.profilePicture}
                 onPress={() => userPressed(userId)}
               />
