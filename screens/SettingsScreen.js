@@ -90,7 +90,6 @@ const SettingsScreen = (props) => {
 
   const hasChanges = () => {
     const currentValues = formState.inputValues;
-    console.log(currentValues);
 
     return (
       currentValues.first_name != firstName ||

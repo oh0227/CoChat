@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
+import { isSetUp } from "../store/authSlice";
 
 const NOTIFICATION_TYPES = [
   { id: "deadline", label: "Deadline Notice", icon: "calendar" },
@@ -18,6 +20,7 @@ const NOTIFICATION_TYPES = [
 ];
 
 const NoticeTypeScreen = (props) => {
+  const dispatch = useDispatch();
   const [selected, setSelected] = useState(NOTIFICATION_TYPES.map((n) => n.id));
 
   useEffect(() => {
@@ -51,6 +54,7 @@ const NoticeTypeScreen = (props) => {
 
   const handleContinue = () => {
     // TODO: 선택한 항목 저장 처리
+    dispatch(isSetUp());
     props.navigation.navigate("Main");
   };
 

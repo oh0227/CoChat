@@ -6,10 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { ActivityIndicator, View } from "react-native";
 
-import ChatListScreen from "../screens/ChatListScreen";
 import SettingsScreen from "../screens/SettingsScreen";
-import ChatScreen from "../screens/ChatScreen";
-import NewChatScreen from "../screens/NewChatScreen";
+import MessageScreen from "../screens/MessageScreen";
 
 import colors from "../constants/colors";
 import commonStyles from "../constants/commonStyles";
@@ -18,24 +16,75 @@ import BASE_URL from "../constants/base_url";
 import { setChatsData } from "../store/chatSlice";
 import { setStoredUsers } from "../store/userSlice";
 import { setChatMessages, setStarredMessages } from "../store/messagesSlice";
+import GroupedMessageScreen from "../screens/GroupedMessageScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+const sampleMessages = [
+  {
+    category: "Deadline Notice",
+    messenger: "Gmail",
+    sender: "홍길동",
+    preview: "졸업보고서 양식 제출",
+    time: "9:41 AM",
+    icon: "mail",
+    iconColor: "#EA4335",
+  },
+  {
+    category: "Payment Notice",
+    messenger: "SMS",
+    sender: "+82 1234-5678",
+    preview: "[KT] 요금 청구 4,610 원",
+    time: "9:35 AM",
+    icon: "chatbubble-ellipses",
+    iconColor: "#32CD32",
+  },
+  {
+    category: "The Others",
+    messenger: "Facebook Messenger",
+    sender: "김길동",
+    preview: "야 너 뭐함?",
+    time: "9:35 AM",
+    icon: "logo-facebook",
+    iconColor: "#4267B2",
+  },
+];
 
 const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={{ headerTitle: "", headerShadowVisible: false }}
   >
     <Tab.Screen
-      name="ChatList"
-      component={ChatListScreen}
+      name="Impotance"
       options={{
-        tabBarLabel: "Chats",
+        tabBarLabel: "Impotance",
         tabBarIcon: ({ color, size }) => (
-          <Ionicons name="chatbubble-outline" size={size} color={color} />
+          <Ionicons name="heart-outline" size={size} color={color} />
         ),
       }}
-    />
+    >
+      {() => (
+        <GroupedMessageScreen
+          route={{ params: { groupBy: "messenger", messages: sampleMessages } }}
+        />
+      )}
+    </Tab.Screen>
+    <Tab.Screen
+      name="Messenger"
+      options={{
+        tabBarLabel: "Messenger",
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="chatbox" size={size} color={color} />
+        ),
+      }}
+    >
+      {() => (
+        <GroupedMessageScreen
+          route={{ params: { groupBy: "messenger", messages: sampleMessages } }}
+        />
+      )}
+    </Tab.Screen>
     <Tab.Screen
       name="Settings"
       component={SettingsScreen}
@@ -59,12 +108,9 @@ const StackNavigator = () => (
       />
       <Stack.Screen
         name="ChatScreen"
-        component={ChatScreen}
+        component={MessageScreen}
         options={{ headerTitle: "", headerBackTitle: "Back" }}
       />
-    </Stack.Group>
-    <Stack.Group screenOptions={{ presentation: "containedModal" }}>
-      <Stack.Screen name="NewChat" component={NewChatScreen} />
     </Stack.Group>
   </Stack.Navigator>
 );
@@ -82,33 +128,8 @@ const MainNavigator = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // 1. 유저 채팅 목록 가져오기
-        const chatsRes = await axios.get(
-          `${BASE_URL}/chats/user/${userData.userId}`,
-          { headers }
-        );
-        const chatIds = chatsRes.data;
 
-        const chatsData = {};
         const usersToFetch = new Set();
-
-        for (const chatId of chatIds) {
-          // 2. 채팅 상세 정보
-          const chatRes = await axios.get(`${BASE_URL}/chats/${chatId}`, {
-            headers,
-          });
-          const chatData = chatRes.data;
-
-          chatsData[chatId] = chatData;
-
-          // 유저 정보 수집
-          chatData.users.forEach((userId) => usersToFetch.add(userId));
-
-          // 3. 메시지 가져오기
-          const msgRes = await axios.get(`${BASE_URL}/messages/${chatId}`, {
-            headers,
-          });
-          dispatch(setChatMessages({ chatId, messagesData: msgRes.data }));
-        }
 
         // 4. 유저 정보 로딩
         const userMap = {};
@@ -119,18 +140,11 @@ const MainNavigator = () => {
           userMap[userId] = userRes.data;
         }
         dispatch(setStoredUsers({ newUsers: userMap }));
-
-        // 5. 별표 메시지
-        const starredRes = await axios.get(
-          `${BASE_URL}/starred/${userData.userId}`,
-          { headers }
+      } catch (error) {
+        console.error(
+          "데이터 로딩 실패:",
+          error.response?.data || error.message
         );
-        dispatch(setStarredMessages({ starredMessages: starredRes.data }));
-
-        // 6. 채팅 정보 저장
-        dispatch(setChatsData({ chatsData }));
-      } catch (err) {
-        console.error("데이터 로딩 실패:", err.response?.data || err.message);
       } finally {
         setIsLoading(false);
       }

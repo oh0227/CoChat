@@ -12,12 +12,13 @@ const AppNavigator = (props) => {
   );
   // const isAuth = true;
   const didTryAutoLogin = useSelector((state) => state.auth.didTryAutoLogin);
+  const isSetUp = useSelector((state) => state.auth.isSetUp);
 
   return (
     <NavigationContainer>
       {!isAuth && !didTryAutoLogin && <StartUpScreen />}
       {!isAuth && didTryAutoLogin && <AuthScreen />}
-      {isAuth && <PostAuthNavigator />}
+      {isAuth && <PostAuthNavigator isSetUp={isSetUp} />}
     </NavigationContainer>
   );
 };

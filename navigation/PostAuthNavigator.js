@@ -9,13 +9,30 @@ import NoticeTypeScreen from "../screens/NoticeTypeScreen";
 
 const Stack = createNativeStackNavigator();
 
-const PostAuthNavigator = () => {
+const PostAuthNavigator = (props) => {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="MessengerSetUp" component={MessengerSetUpScreen} />
-      <Stack.Screen name="AccountSetUp" component={AccountSetupScreen} />
-      <Stack.Screen name="NoticeType" component={NoticeTypeScreen} />
-      <Stack.Screen name="Main" component={MainNavigator} />
+      {props.isSetUp ? (
+        <Stack.Screen
+          name="Main"
+          component={MainNavigator}
+          options={{ headerShown: false }}
+        />
+      ) : (
+        <>
+          <Stack.Screen
+            name="MessengerSetUp"
+            component={MessengerSetUpScreen}
+          />
+          <Stack.Screen name="AccountSetUp" component={AccountSetupScreen} />
+          <Stack.Screen name="NoticeType" component={NoticeTypeScreen} />
+          <Stack.Screen
+            name="Main"
+            component={MainNavigator}
+            options={{ headerShown: false }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 };
