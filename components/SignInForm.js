@@ -1,12 +1,12 @@
 import React, { useReducer, useCallback, useEffect, useState } from "react";
 import Input from "./Input";
 import SubmitButton from "./SubmitButton";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 
 import { validateInput } from "../utils/actions/formAction";
 import { reducer } from "../utils/reducers/formReducer";
 import { Alert, ActivityIndicator } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { signIn } from "../utils/actions/authActions";
 import colors from "../constants/colors";
 
@@ -14,11 +14,11 @@ const isTestMode = true;
 
 const initialState = {
   inputValues: {
-    email: isTestMode ? "oh7895@naver.com" : "",
-    password: isTestMode ? "oh!8621577" : "",
+    cochat_id: isTestMode ? "oh0227" : "",
+    password: isTestMode ? "123456" : "",
   },
   inputValidities: {
-    email: isTestMode,
+    cochat_id: isTestMode,
     password: isTestMode,
   },
   formIsValid: isTestMode,
@@ -41,17 +41,12 @@ const SignInForm = (props) => {
     [dispatchFormState]
   );
 
-  useEffect(() => {
-    if (error) {
-      Alert.alert("An error occured", error, [{ text: "Okay" }]);
-    }
-  }, [error]);
-
   const authHandler = useCallback(async () => {
     try {
       setIsLoading(true);
       const action = signIn(formState.inputValues);
       dispatch(action);
+
       setError(null);
     } catch (error) {
       setError(error.message);
@@ -62,15 +57,14 @@ const SignInForm = (props) => {
   return (
     <>
       <Input
-        id="email"
-        label="Email"
-        icon="mail"
-        iconPack={Feather}
-        autoCapitalize="none"
-        keyboardType="email-address"
+        id="cochat_id"
+        label="Cochat Id"
+        icon="chatbubble-ellipses-outline"
+        iconPack={Ionicons}
         onInputChanged={inputChangedHandler}
-        initialValue={initialState.inputValues.email}
-        errorText={formState.inputValidities["email"]}
+        autoCapitalize="none"
+        initialValue={initialState.inputValues.cochat_id}
+        errorText={formState.inputValidities["cochat_id"]}
       />
       <Input
         id="password"

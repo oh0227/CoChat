@@ -13,45 +13,15 @@ import colors from "../constants/colors";
 import commonStyles from "../constants/commonStyles";
 import BASE_URL from "../constants/base_url";
 
-import { setChatsData } from "../store/chatSlice";
-import { setStoredUsers } from "../store/userSlice";
-import { setChatMessages, setStarredMessages } from "../store/messagesSlice";
+import { setMessageData } from "../store/messageSlice";
 import GroupedMessageScreen from "../screens/GroupedMessageScreen";
+import { initFirebase } from "../utils/firebaseConfig";
+import messaging from "@react-native-firebase/messaging";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const sampleMessages = [
-  {
-    category: "Deadline Notice",
-    messenger: "Gmail",
-    sender: "홍길동",
-    preview: "졸업보고서 양식 제출",
-    time: "9:41 AM",
-    icon: "mail",
-    iconColor: "#EA4335",
-  },
-  {
-    category: "Payment Notice",
-    messenger: "SMS",
-    sender: "+82 1234-5678",
-    preview: "[KT] 요금 청구 4,610 원",
-    time: "9:35 AM",
-    icon: "chatbubble-ellipses",
-    iconColor: "#32CD32",
-  },
-  {
-    category: "The Others",
-    messenger: "Facebook Messenger",
-    sender: "김길동",
-    preview: "야 너 뭐함?",
-    time: "9:35 AM",
-    icon: "logo-facebook",
-    iconColor: "#4267B2",
-  },
-];
-
-const TabNavigator = () => (
+const TabNavigator = ({ messages }) => (
   <Tab.Navigator
     screenOptions={{ headerTitle: "", headerShadowVisible: false }}
   >
@@ -64,11 +34,7 @@ const TabNavigator = () => (
         ),
       }}
     >
-      {() => (
-        <GroupedMessageScreen
-          route={{ params: { groupBy: "messenger", messages: sampleMessages } }}
-        />
-      )}
+      {() => <GroupedMessageScreen category="category" />}
     </Tab.Screen>
     <Tab.Screen
       name="Messenger"
@@ -79,11 +45,7 @@ const TabNavigator = () => (
         ),
       }}
     >
-      {() => (
-        <GroupedMessageScreen
-          route={{ params: { groupBy: "messenger", messages: sampleMessages } }}
-        />
-      )}
+      {() => <GroupedMessageScreen category="messenger" />}
     </Tab.Screen>
     <Tab.Screen
       name="Settings"
@@ -98,19 +60,12 @@ const TabNavigator = () => (
   </Tab.Navigator>
 );
 
-const StackNavigator = () => (
+const StackNavigator = ({ messages }) => (
   <Stack.Navigator>
     <Stack.Group>
-      <Stack.Screen
-        name="Home"
-        component={TabNavigator}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="ChatScreen"
-        component={MessageScreen}
-        options={{ headerTitle: "", headerBackTitle: "Back" }}
-      />
+      <Stack.Screen name="Home" options={{ headerShown: false }}>
+        {() => <TabNavigator messages={messages} />}
+      </Stack.Screen>
     </Stack.Group>
   </Stack.Navigator>
 );
@@ -118,39 +73,26 @@ const StackNavigator = () => (
 const MainNavigator = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
-
   const userData = useSelector((state) => state.auth.userData);
-  const token = useSelector((state) => state.auth.token);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const headers = { Authorization: `Bearer ${token}` };
+    initFirebase();
 
-        // 1. 유저 채팅 목록 가져오기
+    const requestPermission = async () => {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-        const usersToFetch = new Set();
-
-        // 4. 유저 정보 로딩
-        const userMap = {};
-        for (const userId of usersToFetch) {
-          const userRes = await axios.get(`${BASE_URL}/user/${userId}`, {
-            headers,
-          });
-          userMap[userId] = userRes.data;
-        }
-        dispatch(setStoredUsers({ newUsers: userMap }));
-      } catch (error) {
-        console.error(
-          "데이터 로딩 실패:",
-          error.response?.data || error.message
-        );
-      } finally {
-        setIsLoading(false);
+      if (enabled) {
+        console.log("Authorization status:", authStatus);
+      } else {
+        Alert.alert("알림 권한이 없습니다", "설정에서 알림을 허용해주세요.");
       }
     };
 
-    fetchData();
+    requestPermission();
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {

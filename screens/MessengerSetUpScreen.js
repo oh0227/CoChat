@@ -1,44 +1,83 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/Ionicons";
-
-const MESSENGERS = [
-  { id: "instagram", label: "Instagram DM" },
-  { id: "facebook", label: "Facebook Messenger" },
-  { id: "gmail", label: "Gmail" },
-  { id: "sms", label: "SMS" },
-];
+import { MESSENGERS } from "../constants/messengers";
+import { useSelector } from "react-redux";
+import BASE_URL from "../constants/base_url";
+import axios from "axios";
+import messaging from "@react-native-firebase/messaging";
 
 const MessengerSetupScreen = (props) => {
-  const [selected, setSelected] = useState(MESSENGERS.map((m) => m.id));
+  const [connectedAccounts, setConnectedAccounts] = useState([]);
+  const userData = useSelector((state) => state.auth.userData);
 
   useEffect(() => {
-    props.navigation.setOptions({
-      headerTitle: "Messenger Selection",
-    });
-  }, [props.navigation]);
+    props.navigation.setOptions({ headerTitle: "Messenger Selection" });
+  }, []);
 
-  const toggleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    );
-  };
+  // 메신저별 로그인 버튼 클릭 시
+  const handleMessengerLogin = async (messengerId) => {
+    try {
+      // OAuth 로그인 페이지 열기
+      const loginUrl = `${BASE_URL}/${messengerId}/auth/login?cochat_id=${userData.cochat_id}`;
+      await Linking.openURL(loginUrl);
 
-  const toggleSelectAll = () => {
-    if (selected.length === MESSENGERS.length) {
-      setSelected([]);
-    } else {
-      setSelected(MESSENGERS.map((m) => m.id));
+      // 로그인 후 연결된 메신저 계정 정보 받아오기
+      const { data } = await axios.get(
+        `${BASE_URL}/messenger/cochat_id/${userData.cochat_id}`
+      );
+
+      // 새로운 계정 목록 변환
+      const newAccounts = data.map((item) => ({
+        messenger_name: item.messenger,
+        messenger_user_id: item.messenger_user_id,
+        access_token: item.access_token,
+      }));
+
+      // 기존 connectedAccounts에 없는 계정만 필터링
+      const uniqueNewAccounts = newAccounts.filter((newItem) => {
+        return !connectedAccounts.some(
+          (existingItem) =>
+            existingItem.messenger_name === newItem.messenger_name &&
+            existingItem.messenger_user_id === newItem.messenger_user_id
+        );
+      });
+
+      // 병합 후 상태 업데이트
+      const updatedAccounts = [...connectedAccounts, ...uniqueNewAccounts];
+      setConnectedAccounts(updatedAccounts);
+    } catch (err) {
+      console.error("메신저 로그인 오류:", err);
     }
   };
 
-  const handleContinue = () => {
-    // 설정 저장 (예: Redux)
-    props.navigation.navigate("AccountSetUp");
-  };
+  // 완료 버튼 클릭 시
+  const handleComplete = () => {
+    messaging()
+      .getToken()
+      .then((token) => {
+        return axios.post(`${BASE_URL}/register-fcm-token`, {
+          cochat_id: userData.cochat_id,
+          fcm_token: token,
+        });
+      })
+      .then((res) => {
+        console.log("✅ FCM 토큰 등록 성공", res.data);
+      })
+      .catch((err) => {
+        console.error("❌ FCM 등록 실패:", err.response?.data || err.message);
+      });
 
-  const isAllSelected = selected.length === MESSENGERS.length;
+    props.navigation.navigate("AccountSetUp", { connectedAccounts });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -46,38 +85,47 @@ const MessengerSetupScreen = (props) => {
         Welcome to{"\n"}Co-Chat Messenger{"\n"}Integration Service!
       </Text>
       <Text style={styles.subtitle}>
-        Select messengers that you want to manage.
+        Select messengers to connect. You can add multiple accounts per
+        messenger.
       </Text>
 
-      <View style={styles.selectionBox}>
-        <TouchableOpacity style={styles.item} onPress={toggleSelectAll}>
-          <Icon
-            name={isAllSelected ? "checkbox" : "square-outline"}
-            size={22}
-            color="#444"
-          />
-          <Text style={styles.itemText}>SELECT ALL</Text>
-        </TouchableOpacity>
-
+      <ScrollView style={styles.selectionBox}>
         {MESSENGERS.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.item}
-            onPress={() => toggleSelect(item.id)}
-          >
-            <Icon
-              name={selected.includes(item.id) ? "checkbox" : "square-outline"}
-              size={22}
-              color="#444"
-            />
-            <Text style={styles.itemText}>{item.label.toUpperCase()}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          <View key={item.id} style={styles.item}>
+            {/* 아이콘 + 라벨 */}
+            <View style={styles.itemHeader}>
+              <Icon name={item.icon} size={22} color="#444" />
+              <Text style={styles.itemText}>{item.label.toUpperCase()}</Text>
+            </View>
 
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>CONTINUE</Text>
-        <Icon name="arrow-forward" size={20} color="#fff" />
+            {/* 로그인 버튼 */}
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => handleMessengerLogin(item.id)}
+            >
+              <Text style={styles.loginButtonText}>LOGIN</Text>
+            </TouchableOpacity>
+
+            {/* 계정 목록 */}
+            <View style={styles.accountList}>
+              {connectedAccounts
+                .filter((acc) => acc.messenger_name === item.id)
+                .map((acc) => (
+                  <Text
+                    key={acc.messenger_user_id}
+                    style={styles.connectedText}
+                  >
+                    {acc.messenger_user_id}
+                  </Text>
+                ))}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+        <Text style={styles.completeButtonText}>Complete</Text>
+        <Icon name="checkmark" size={20} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -88,24 +136,9 @@ export default MessengerSetupScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#6e7eb3", // 대략적인 보라-블루 배경
+    backgroundColor: "#6e7eb3",
     padding: 20,
-    justifyContent: "space-between",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  profile: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  profileText: {
-    color: "#fff",
-    marginLeft: 8,
-    fontWeight: "bold",
-    fontSize: 12,
+    justifyContent: "flex-start",
   },
   title: {
     marginTop: 20,
@@ -118,42 +151,80 @@ const styles = StyleSheet.create({
     color: "#ddd",
     marginTop: 10,
     fontSize: 14,
+    marginBottom: 10,
   },
   selectionBox: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     elevation: 3,
+    marginTop: 10,
+    flex: 1,
   },
   item: {
+    paddingVertical: 12,
+    borderBottomColor: "#eee",
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  itemHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    marginBottom: 8,
   },
+
   itemText: {
     marginLeft: 10,
     fontSize: 15,
     fontWeight: "500",
+    color: "#333",
   },
-  continueButton: {
+
+  loginButton: {
     backgroundColor: "#3546f0",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignSelf: "flex-start", // 왼쪽 정렬
+    marginBottom: 6,
+  },
+
+  loginButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  connectedText: {
+    color: "#0a0",
+    fontSize: 14,
+    marginVertical: 2,
+  },
+
+  accountList: {
+    paddingLeft: 6,
+  },
+  completeButton: {
+    backgroundColor: "#1abc9c",
     padding: 16,
     borderRadius: 30,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 10,
   },
-  continueText: {
+  completeButtonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
     marginRight: 8,
   },
-  button: {
-    color: "black",
+  accountList: {
+    marginTop: 8,
+    paddingLeft: 8,
   },
-  buttonContainer: {
-    marginLeft: 16,
-    width: 50,
+  connectedText: {
+    color: "#333",
+    fontSize: 14,
+    marginVertical: 2,
   },
 });

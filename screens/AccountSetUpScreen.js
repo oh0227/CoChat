@@ -10,106 +10,103 @@ import {
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const SAMPLE_DATA = [
-  {
-    service: "Gmail",
-    icon: "mail",
-    color: "#ea4335",
-    accounts: ["test1@gmail.com", "test2@gmail.com", "test3@gmail.com"],
-  },
-  {
-    service: "Facebook Messenger",
-    icon: "logo-facebook",
-    color: "#1877f2",
-    accounts: ["username1", "username2"],
-  },
-];
-
 const AccountSetupScreen = (props) => {
-  const [selectedAccounts, setSelectedAccounts] = useState(() => {
-    const init = {};
-    SAMPLE_DATA.forEach((s) => {
-      init[s.service] = {};
-      s.accounts.forEach((a) => (init[s.service][a] = true));
-    });
-    return init;
-  });
+  const { connectedAccounts = [] } = props?.route?.params || {};
+
+  const [selectedAccounts, setSelectedAccounts] = useState({});
 
   useEffect(() => {
-    {
-      props.navigation.setOptions({
-        headerLeft: () => (
-          <Pressable
-            onPress={() => props.navigation.goBack()}
-            style={styles.buttonContainer}
-          >
-            <Text style={styles.button}>Back</Text>
-          </Pressable>
-        ),
-      });
+    // 계정 초기 선택 상태 설정
+    const init = {};
+    connectedAccounts.forEach((acc) => {
+      const { messenger_name, messenger_user_id } = acc;
+      if (!init[messenger_name]) init[messenger_name] = {};
+      init[messenger_name][messenger_user_id] = true;
+    });
+    setSelectedAccounts(init);
+  }, [connectedAccounts]);
+
+  const groupedAccounts = connectedAccounts.reduce((acc, curr) => {
+    const name = curr.messenger_name;
+    if (!acc[name]) acc[name] = [];
+    if (!acc[name].includes(curr.messenger_user_id)) {
+      acc[name].push(curr.messenger_user_id);
     }
+    return acc;
+  }, {});
+
+  useEffect(() => {
+    props.navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={() => props.navigation.goBack()}
+          style={styles.buttonContainer}
+        >
+          <Text style={styles.button}>Back</Text>
+        </Pressable>
+      ),
+    });
   }, [props.navigation]);
 
-  const toggleAccount = (service, account) => {
+  const toggleAccount = (messenger, account) => {
     setSelectedAccounts((prev) => ({
       ...prev,
-      [service]: {
-        ...prev[service],
-        [account]: !prev[service][account],
+      [messenger]: {
+        ...prev[messenger],
+        [account]: !prev[messenger]?.[account],
       },
     }));
   };
 
   const handleContinue = () => {
-    // TODO: API 호출 등
+    // TODO: 선택된 계정 데이터 전송 등
     props.navigation.navigate("NoticeType");
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>
-        Co-Chat successfully{"\n"}found your accounts!
+        Co-Chat successfully{"\n"}connect your accounts!
       </Text>
 
       <ScrollView style={styles.scroll}>
-        {SAMPLE_DATA.map((section) => (
-          <View key={section.service} style={styles.serviceBox}>
-            <View style={styles.serviceHeader}>
-              <Icon name={section.icon} size={22} color={section.color} />
-              <Text style={styles.serviceTitle}>
-                {section.service.toUpperCase()}
-              </Text>
-            </View>
+        {groupedAccounts &&
+          Object.entries(groupedAccounts).map(([messenger, accounts]) => (
+            <View key={messenger} style={styles.messengerBox}>
+              <View style={styles.messengerHeader}>
+                <Text style={styles.messengerTitle}>
+                  {messenger.toUpperCase()}
+                </Text>
+              </View>
 
-            {section.accounts.map((acc) => (
-              <TouchableOpacity
-                key={acc}
-                style={styles.accountRow}
-                onPress={() => toggleAccount(section.service, acc)}
-              >
-                <Icon
-                  name={
-                    selectedAccounts[section.service][acc]
-                      ? "checkbox"
-                      : "square-outline"
-                  }
-                  size={20}
-                  color="#333"
-                />
-                <Text style={styles.accountText}>{acc.toUpperCase()}</Text>
-              </TouchableOpacity>
-            ))}
+              {accounts.map((acc) => (
+                <TouchableOpacity
+                  key={acc}
+                  style={styles.accountRow}
+                  onPress={() => toggleAccount(messenger, acc)}
+                >
+                  <Icon
+                    name={
+                      selectedAccounts[messenger]?.[acc]
+                        ? "checkbox"
+                        : "square-outline"
+                    }
+                    size={20}
+                    color="#333"
+                  />
+                  <Text style={styles.accountText}>{acc}</Text>
+                </TouchableOpacity>
+              ))}
 
-            <View style={styles.summaryBox}>
-              <Text style={styles.summaryText}>
-                You have{" "}
-                <Text style={styles.highlight}>{section.accounts.length}</Text>{" "}
-                accounts in{" "}
-                <Text style={styles.highlight}>{section.service}!</Text>
-              </Text>
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryText}>
+                  You have{" "}
+                  <Text style={styles.highlight}>{accounts.length}</Text>{" "}
+                  accounts in <Text style={styles.highlight}>{messenger}!</Text>
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
       </ScrollView>
 
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
@@ -139,18 +136,18 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  serviceBox: {
+  messengerBox: {
     backgroundColor: "#f1f1f1",
     borderRadius: 14,
     padding: 12,
     marginBottom: 20,
   },
-  serviceHeader: {
+  messengerHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-  serviceTitle: {
+  messengerTitle: {
     fontWeight: "bold",
     fontSize: 16,
     marginLeft: 8,

@@ -17,9 +17,9 @@ import colors from "../constants/colors";
 import { useSelector } from "react-redux";
 import PageContainer from "../components/PageContainer";
 import Bubble from "../components/Bubble";
-import { createChat, sendTextMessage } from "../utils/actions/chatActions";
+import { createChat, sendTextMessage } from "../utils/actions/messageActions";
 
-const ChatScreen = (props) => {
+const MessageScreen = (props) => {
   const [chatUsers, setChatUsers] = useState([]);
   const [messageText, setMessageText] = useState("");
   const [chatId, setChatId] = useState(props.route?.params?.chatId);
@@ -28,24 +28,7 @@ const ChatScreen = (props) => {
   const userData = useSelector((state) => state.auth.userData);
   const storedUsers = useSelector((state) => state.users.storedUsers);
   const storedChats = useSelector((state) => state.chats.chatsData);
-  const chatMessages = useSelector((state) => {
-    if (!chatId) return [];
-
-    const chatMessagesData = state.messages.messagesData[chatId];
-
-    if (!chatMessagesData) return [];
-
-    const messageList = [];
-    for (const key in chatMessagesData) {
-      const message = chatMessagesData[key];
-      messageList.push({
-        key,
-        ...message,
-      });
-    }
-
-    return messageList;
-  });
+  const messagesData = useSelector((state) => state.messages.messagesData);
 
   const chatData =
     (chatId && storedChats[chatId]) || props.route?.params?.newChatData;
@@ -59,11 +42,11 @@ const ChatScreen = (props) => {
     );
   };
 
-  useEffect(() => {
+  useEffect(async () => {
     props.navigation.setOptions({
       headerTitle: getChatTitleFromName(),
     });
-
+    console.log(messagesData);
     setChatUsers(chatData.users);
   }, [chatUsers]);
 
@@ -211,4 +194,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatScreen;
+export default MessageScreen;

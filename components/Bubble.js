@@ -10,7 +10,7 @@ import {
 import uuid from "react-native-uuid";
 import * as Clipboard from "expo-clipboard";
 import { Feather, FontAwesome } from "@expo/vector-icons";
-import { starMessage } from "../utils/actions/chatActions";
+import { starMessage } from "../utils/actions/messageActions";
 import { useSelector } from "react-redux";
 
 function formatAmPm(dateString) {
