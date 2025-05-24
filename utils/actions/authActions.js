@@ -6,19 +6,19 @@ import { getUserData } from "./userActions";
 
 let timer;
 
-export const signUp = ({ firstName, lastName, email, password }) => {
+export const signUp = ({ firstName, lastName, cochat_id, password }) => {
   return async (dispatch) => {
     try {
       // 1. 회원가입
       const response = await axios.post(`${BASE_URL}/user/`, {
         first_name: firstName,
         last_name: lastName,
-        email,
+        cochat_id,
         password,
       });
 
       // 2. 회원가입 성공 후 바로 로그인
-      dispatch(signIn({ email, password }));
+      dispatch(signIn({ cochat_id, password }));
     } catch (error) {
       const message =
         error.response?.data?.detail || "회원가입 실패. 다시 시도하세요.";
@@ -27,11 +27,11 @@ export const signUp = ({ firstName, lastName, email, password }) => {
   };
 };
 
-export const signIn = ({ email, password }) => {
+export const signIn = ({ cochat_id, password }) => {
   return async (dispatch) => {
     try {
       const params = new URLSearchParams();
-      params.append("username", email);
+      params.append("username", cochat_id);
       params.append("password", password);
 
       const response = await axios.post(`${BASE_URL}/token`, params, {
@@ -55,7 +55,7 @@ export const signIn = ({ email, password }) => {
         })
       );
 
-      saveDataToStorage(access_token, email, expiryDate);
+      saveDataToStorage(access_token, cochat_id, expiryDate);
 
       timer = setTimeout(() => {
         dispatch(userLogout());
@@ -81,7 +81,7 @@ export const updateSignedInUserData = async (userId, newData, token) => {
       {
         first_name: newData.first_name,
         last_name: newData.last_name,
-        email: newData.email,
+        cochat_id: newData.cochat_id,
       },
       {
         headers: {
@@ -96,12 +96,12 @@ export const updateSignedInUserData = async (userId, newData, token) => {
   }
 };
 
-const saveDataToStorage = (token, email, expiryDate) => {
+const saveDataToStorage = (token, cochat_id, expiryDate) => {
   AsyncStorage.setItem(
     "userData",
     JSON.stringify({
       token,
-      email,
+      cochat_id,
       expiryDate: expiryDate.toISOString(),
     })
   );

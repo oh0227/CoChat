@@ -61,3 +61,15 @@ export const starMessage = async (messageId, chatId, userId, token) => {
     throw error;
   }
 };
+
+export const fetchData = async (cochat_id) => {
+  try {
+    const res = await axios.get(`${BASE_URL}/message/cochat_id/${cochat_id}`);
+
+    dispatch(setMessageData({ messageData: res.data }));
+  } catch (error) {
+    console.error("데이터 로딩 실패:", error.response?.data || error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};

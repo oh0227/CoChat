@@ -1,0 +1,19 @@
+{"null": 
+  [{"category": null, 
+    "content": 
+    "gsregerggr", 
+    "id": 1, 
+    "messenger": "gmail", 
+    "receiver_id": "<znwoo0227@gmail.com>", 
+    "sender_id": "\"오진우\" <oh7895@naver.com>", 
+    "subject": "rgsegrgr", 
+    "timestamp": "2025-05-22T07:24:31.989646"}, 
+  {"category": null, 
+    "content": "faewfaewfafeaf", 
+    "id": 2, 
+    "messenger": "gmail", 
+    "receiver_id": "<znwoo0227@gmail.com>", 
+    "sender_id": "\"오진우\" <oh7895@naver.com>", 
+    "subject": "eafawef", 
+    "timestamp": "2025-05-22T07:24:43.219249"}]
+}

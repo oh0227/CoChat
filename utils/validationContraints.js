@@ -54,7 +54,7 @@ export const validateEmail = (id, value) => {
   return validationResult && validationResult[id];
 };
 
-export const validatePassword = (id, value) => {
+export const validateIdPassword = (id, value) => {
   const constraints = {
     presence: { allowEmpty: false },
   };

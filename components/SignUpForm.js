@@ -1,25 +1,25 @@
 import React, { useCallback, useReducer, useState, useEffect } from "react";
 import Input from "./Input";
 import SubmitButton from "./SubmitButton";
-import { Feather, FontAwesome } from "@expo/vector-icons";
+import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { validateInput } from "../utils/actions/formAction";
 import { reducer } from "../utils/reducers/formReducer";
 import { signUp } from "../utils/actions/authActions";
 import { ActivityIndicator, Alert } from "react-native";
 import colors from "../constants/colors";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 const initialState = {
   inputValues: {
     firstName: "",
     lastName: "",
-    email: "",
+    cochat_id: "",
     password: "",
   },
   inputValidities: {
     firstName: false,
     lastName: false,
-    email: false,
+    cochat_id: false,
     password: false,
   },
   formIsValid: false,
@@ -43,12 +43,6 @@ const SignUpForm = (props) => {
     },
     [dispatchFormState]
   );
-
-  useEffect(() => {
-    if (error) {
-      Alert.alert("An error occured", error, [{ text: "Okay" }]);
-    }
-  }, [error]);
 
   const authHandler = useCallback(async () => {
     try {
@@ -83,14 +77,13 @@ const SignUpForm = (props) => {
         errorText={formState.inputValidities["lastName"]}
       />
       <Input
-        id="email"
-        label="Email"
-        icon="mail"
-        iconPack={Feather}
+        id="cochat_id"
+        label="Cochat Id"
+        icon="chatbubble-ellipses-outline"
+        iconPack={Ionicons}
         onInputChanged={inputChangedHandler}
-        keyboardType="email-address"
         autoCapitalize="none"
-        errorText={formState.inputValidities["email"]}
+        errorText={formState.inputValidities["cochat_id"]}
       />
       <Input
         id="password"

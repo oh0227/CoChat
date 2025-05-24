@@ -25,12 +25,7 @@ import ProfileImage from "../components/ProfileImage";
 const SettingsScreen = (props) => {
   const dispatch = useDispatch();
 
-  // const userData = useSelector((state) => state.auth.userData);
-  const userData = {
-    first_name: "Jinwoo",
-    last_name: "Oh",
-    email: "oh7895@naver.com",
-  };
+  const userData = useSelector((state) => state.auth.userData);
 
   const token = useSelector((state) => state.auth.token);
 
