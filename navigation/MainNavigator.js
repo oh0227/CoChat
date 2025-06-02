@@ -15,6 +15,7 @@ import BASE_URL from "../constants/base_url";
 
 import { setMessageData } from "../store/messageSlice";
 import GroupedMessageScreen from "../screens/GroupedMessageScreen";
+import MessageDetailScreen from "../screens/MessageDetailScreen";
 import { initFirebase } from "../utils/firebaseConfig";
 import messaging from "@react-native-firebase/messaging";
 
@@ -27,26 +28,26 @@ const TabNavigator = ({ messages }) => (
   >
     <Tab.Screen
       name="Impotance"
+      component={GroupedMessageScreen}
+      initialParams={{ category: "category" }}
       options={{
         tabBarLabel: "Impotance",
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="heart-outline" size={size} color={color} />
         ),
       }}
-    >
-      {() => <GroupedMessageScreen category="category" />}
-    </Tab.Screen>
+    ></Tab.Screen>
     <Tab.Screen
       name="Messenger"
+      component={GroupedMessageScreen}
+      initialParams={{ category: "messenger" }}
       options={{
         tabBarLabel: "Messenger",
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="chatbox" size={size} color={color} />
         ),
       }}
-    >
-      {() => <GroupedMessageScreen category="messenger" />}
-    </Tab.Screen>
+    ></Tab.Screen>
     <Tab.Screen
       name="Settings"
       component={SettingsScreen}
@@ -66,6 +67,11 @@ const StackNavigator = ({ messages }) => (
       <Stack.Screen name="Home" options={{ headerShown: false }}>
         {() => <TabNavigator messages={messages} />}
       </Stack.Screen>
+      <Stack.Screen
+        name="MessageDetail"
+        component={MessageDetailScreen}
+        options={{ title: "Message Detail" }}
+      />
     </Stack.Group>
   </Stack.Navigator>
 );

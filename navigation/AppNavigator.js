@@ -10,7 +10,6 @@ const AppNavigator = (props) => {
   const isAuth = useSelector(
     (state) => state.auth.token !== null && state.auth.token !== ""
   );
-  // const isAuth = true;
   const didTryAutoLogin = useSelector((state) => state.auth.didTryAutoLogin);
   const isSetUp = useSelector((state) => state.auth.isSetUp);
 

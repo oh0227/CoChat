@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import { isSetUp } from "../store/authSlice";
+import BASE_URL from "../constants/base_url";
+import colors from "../constants/colors";
 
 const NOTIFICATION_TYPES = [
   { id: "deadline", label: "Deadline Notice", icon: "calendar" },
@@ -22,9 +25,12 @@ const NOTIFICATION_TYPES = [
 const NoticeTypeScreen = (props) => {
   const dispatch = useDispatch();
   const [selected, setSelected] = useState(NOTIFICATION_TYPES.map((n) => n.id));
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     {
+      console.log(selected);
+
       props.navigation.setOptions({
         headerLeft: () => (
           <Pressable
@@ -52,9 +58,29 @@ const NoticeTypeScreen = (props) => {
     }
   };
 
-  const handleContinue = () => {
-    // TODO: 선택한 항목 저장 처리
+  const handleContinue = async () => {
+    try {
+      setIsLoading(true);
+      const payload = {
+        cochat_id: "oh0227", // 실제 유저 ID로 동적으로 설정하세요
+        preferences: selected, // 예: ["deadline", "payment"]
+      };
+
+      const response = await fetch(`${BASE_URL}/user/preferences`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("서버 전송 실패");
+
+      console.log("✅ Preferences sent!");
+    } catch (error) {
+      console.error("❗ Error sending preferences:", error);
+    }
+
     dispatch(isSetUp());
+    setIsLoading(false);
     props.navigation.navigate("Main");
   };
 
@@ -101,11 +127,21 @@ const NoticeTypeScreen = (props) => {
       <Text style={styles.note}>
         Please note that unmarked notifications are displayed at once.
       </Text>
-
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>CONTINUE</Text>
-        <Icon name="arrow-forward" size={18} color="#fff" />
-      </TouchableOpacity>
+      {isLoading ? (
+        <ActivityIndicator
+          size={"small"}
+          color={colors.primary}
+          style={{ marginTop: 10 }}
+        />
+      ) : (
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinue}
+        >
+          <Text style={styles.continueText}>CONTINUE</Text>
+          <Icon name="arrow-forward" size={18} color="#fff" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };

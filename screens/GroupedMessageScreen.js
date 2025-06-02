@@ -1,4 +1,4 @@
-import React, { useDebugValue, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,15 @@ import Icon from "react-native-vector-icons/Ionicons";
 import messaging from "@react-native-firebase/messaging";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchData } from "../utils/actions/messageActions";
-import { setMessageData } from "../store/messageSlice";
-import axios from "axios";
-import BASE_URL from "../constants/base_url";
+import { addMessage } from "../store/messageSlice";
+import MessageItem from "../components/MessageItem";
 
 const GroupedMessageScreen = (props) => {
   const dispatch = useDispatch();
   const reduxMessages = useSelector((state) => state.messages.messageData);
   const userData = useSelector((state) => state.auth.userData);
   const [messages, setMessages] = useState([]);
+  const [likedMessages, setLikedMessages] = useState(new Set());
 
   useEffect(() => {
     setMessages(removeDuplicates(reduxMessages));
@@ -36,7 +36,8 @@ const GroupedMessageScreen = (props) => {
 
   const getGroupedData = (msgs) =>
     msgs.reduce((acc, msg) => {
-      const key = props.category === "category" ? msg.category : msg.messenger;
+      const { category } = props.route.params;
+      const key = category === "category" ? msg.category : msg.messenger;
       if (!acc[key]) acc[key] = [];
       acc[key].push(msg);
       return acc;
@@ -44,41 +45,47 @@ const GroupedMessageScreen = (props) => {
 
   const groupedData = getGroupedData(messages);
 
-  // 포그라운드 FCM 수신 처리
+  useEffect(() => {
+    if (!userData?.cochat_id) return;
+    dispatch(fetchData(userData.cochat_id));
+  }, [dispatch, userData?.cochat_id]);
+
   useEffect(() => {
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
-      Alert.alert(
-        remoteMessage.notification.title,
-        remoteMessage.notification.body
-      );
-    });
-    const fetchData = async () => {
-      try {
-        const res = await axios.get(
-          `${BASE_URL}/message/cochat_id/${userData.cochat_id}`
-        );
+      const data = remoteMessage.data;
 
-        dispatch(setMessageData({ messageData: res.data }));
-      } catch (error) {
-        console.error(
-          "데이터 로딩 실패:",
-          error.response?.data || error.message
-        );
-      } finally {
-        setIsLoading(false);
+      const newMessage = {
+        id: data.gmail_message_id,
+        sender_id: data.sender_id,
+        receiver_id: data.receiver_id,
+        content: data.content,
+        timestamp: data.timestamp,
+        icon: data.icon,
+        iconColor: data.iconColor,
+        category: data.category,
+        messenger: data.messenger,
+        recommended: data.recommended === "true",
+      };
+
+      dispatch(addMessage(newMessage));
+
+      if (newMessage.recommended) {
+        Alert.alert(data.subject || "새 메일", data.content?.slice(0, 50));
       }
-    };
+    });
 
-    fetchData();
     return unsubscribe;
   }, []);
 
-  // 백그라운드/종료 상태 수신 (필요시 추가 구현)
   useEffect(() => {
     messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-      // 백그라운드 수신 시 로직 (로컬 DB 저장 등)
+      // 필요시 처리
     });
   }, []);
+
+  const handleLike = (id) => {
+    setLikedMessages((prev) => new Set(prev).add(id));
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -92,23 +99,22 @@ const GroupedMessageScreen = (props) => {
           </View>
 
           {msgs.map((msg, index) => (
-            <View key={index} style={styles.messageRow}>
-              <View style={styles.iconWrapper}>
-                <Icon
-                  name={msg.icon}
-                  size={24}
-                  color={msg.iconColor || "#333"}
-                />
-              </View>
-              <View style={styles.messageContent}>
-                <Text style={styles.sender}>{msg.sender_id}</Text>
-                <Text style={styles.sender}>{msg.receiver_id}</Text>
-                <Text style={styles.preview} numberOfLines={1}>
-                  {msg.content}
-                </Text>
-              </View>
-              <Text style={styles.timestamp}>{msg.timestamp}</Text>
-            </View>
+            <MessageItem
+              key={msg.id || index}
+              icon={msg.icon}
+              iconColor={msg.iconColor}
+              sender={msg.sender_id}
+              receiver={msg.receiver_id}
+              content={msg.content}
+              timestamp={msg.timestamp}
+              liked={likedMessages.has(msg.id)} // ✅ 좋아요 여부 전달
+              onPress={() => {
+                props.navigation.navigate("MessageDetail", {
+                  message: msg,
+                  onLike: handleLike, // ✅ Detail 화면에서 좋아요 반영되도록 콜백 전달
+                });
+              }}
+            />
           ))}
         </View>
       ))}
@@ -141,31 +147,5 @@ const styles = StyleSheet.create({
   seeMore: {
     color: "#777",
     fontSize: 13,
-  },
-  messageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomColor: "#ccc",
-    borderBottomWidth: 0.5,
-  },
-  iconWrapper: {
-    width: 30,
-  },
-  messageContent: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  sender: {
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-  preview: {
-    fontSize: 12,
-    color: "#666",
-  },
-  timestamp: {
-    fontSize: 11,
-    color: "#999",
   },
 });
