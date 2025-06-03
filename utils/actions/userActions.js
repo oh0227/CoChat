@@ -41,19 +41,23 @@ export const searchUsers = async (queryText, token) => {
   }
 };
 
-export const updateUserPreference = async (messageId, userId) => {
+export const updateUserPreference = async (messageId, cochatId) => {
   try {
-    const response = await axios.post(`${BASE_URL}/preferences/update`, {
+    console.log("🔁 updateUserPreference called");
+    const response = await axios.post(`${BASE_URL}/user/preference/update`, {
       message_id: messageId,
-      user_id: userId,
+      cochat_id: cochatId,
     });
 
     if (response.status === 200) {
       console.log("✅ 취향 업데이트 완료");
+      return { success: true, data: response.data };
     } else {
       console.warn("⚠️ 예상치 못한 응답:", response.status);
+      return { success: false, status: response.status };
     }
   } catch (error) {
     console.error("❌ 취향 업데이트 실패:", error);
+    return { success: false, error };
   }
 };

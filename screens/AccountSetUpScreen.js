@@ -9,11 +9,15 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import axios from "axios";
+import BASE_URL from "../constants/base_url";
+import { useSelector } from "react-redux";
 
 const AccountSetupScreen = (props) => {
   const { connectedAccounts = [] } = props?.route?.params || {};
 
   const [selectedAccounts, setSelectedAccounts] = useState({});
+  const userData = useSelector((state) => state.auth.userData);
 
   useEffect(() => {
     // 계정 초기 선택 상태 설정
@@ -58,8 +62,46 @@ const AccountSetupScreen = (props) => {
     }));
   };
 
-  const handleContinue = () => {
-    // TODO: 선택된 계정 데이터 전송 등
+  const handleContinue = async () => {
+    try {
+      // 삭제할 계정 추출
+      const accountsToDelete = [];
+
+      Object.entries(selectedAccounts).forEach(([messenger, accountMap]) => {
+        Object.entries(accountMap).forEach(([accountId, isSelected]) => {
+          if (!isSelected) {
+            accountsToDelete.push({
+              messenger,
+              messenger_user_id: accountId,
+            });
+          }
+        });
+      });
+
+      // 삭제 요청 수행 (병렬 처리)
+      await Promise.all(
+        accountsToDelete.map((acc) =>
+          axios.request({
+            method: "delete",
+            url: `${BASE_URL}/messenger/delete`,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            data: {
+              user_id: userData.cochat_id,
+              messenger: acc.messenger,
+              messenger_user_id: acc.messenger_user_id,
+            },
+          })
+        )
+      );
+
+      console.log("✅ 선택 해제된 계정 삭제 완료");
+    } catch (err) {
+      console.error("❌ 계정 삭제 중 오류:", err.response?.data || err.message);
+    }
+
+    // 다음 화면 이동
     props.navigation.navigate("NoticeType");
   };
 

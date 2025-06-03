@@ -7,41 +7,45 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { isSetUp } from "../store/authSlice";
 import BASE_URL from "../constants/base_url";
 import colors from "../constants/colors";
 
-const NOTIFICATION_TYPES = [
-  { id: "deadline", label: "Deadline Notice", icon: "calendar" },
-  { id: "payment", label: "Payment Notice", icon: "card" },
-  { id: "public", label: "Public Warning Notice", icon: "warning" },
-  { id: "office", label: "Office Notice", icon: "document-text" },
+const DEFAULT_NOTIFICATION_TYPES = [
+  { id: "deadline", label: "마감 안내", icon: "calendar" },
+  { id: "payment", label: "결제 안내", icon: "card" },
+  { id: "public", label: "공공 경고", icon: "warning" },
+  { id: "office", label: "행정 공지", icon: "document-text" },
 ];
 
 const NoticeTypeScreen = (props) => {
   const dispatch = useDispatch();
-  const [selected, setSelected] = useState(NOTIFICATION_TYPES.map((n) => n.id));
+  const [types, setTypes] = useState(DEFAULT_NOTIFICATION_TYPES);
+  const [selected, setSelected] = useState(
+    DEFAULT_NOTIFICATION_TYPES.map((n) => n.id)
+  );
+  const [newTypeLabel, setNewTypeLabel] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { cochat_id } = useSelector((state) => state.auth.userData);
 
   useEffect(() => {
-    {
-      console.log(selected);
-
-      props.navigation.setOptions({
-        headerLeft: () => (
-          <Pressable
-            onPress={() => props.navigation.goBack()}
-            style={styles.buttonContainer}
-          >
-            <Text style={styles.button}>Back</Text>
-          </Pressable>
-        ),
-      });
-    }
+    props.navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={() => props.navigation.goBack()}
+          style={styles.buttonContainer}
+        >
+          <Text style={styles.button}>뒤로가기</Text>
+        </Pressable>
+      ),
+    });
   }, [props.navigation]);
 
   const toggleSelect = (id) => {
@@ -51,22 +55,35 @@ const NoticeTypeScreen = (props) => {
   };
 
   const toggleSelectAll = () => {
-    if (selected.length === NOTIFICATION_TYPES.length) {
+    if (selected.length === types.length) {
       setSelected([]);
     } else {
-      setSelected(NOTIFICATION_TYPES.map((n) => n.id));
+      setSelected(types.map((t) => t.id));
     }
+  };
+
+  const addCustomType = () => {
+    if (!newTypeLabel.trim()) return;
+    const newType = {
+      id: newTypeLabel.trim(),
+      label: newTypeLabel.trim(),
+      icon: "notifications",
+    };
+
+    setTypes((prev) => [...prev, newType]);
+    setSelected((prev) => [...prev, newType.id]);
+    setNewTypeLabel("");
   };
 
   const handleContinue = async () => {
     try {
       setIsLoading(true);
       const payload = {
-        cochat_id: "oh0227", // 실제 유저 ID로 동적으로 설정하세요
-        preferences: selected, // 예: ["deadline", "payment"]
+        cochat_id: cochat_id, // 실제 유저 ID로 교체
+        preferences: selected,
       };
 
-      const response = await fetch(`${BASE_URL}/user/preferences`, {
+      const response = await fetch(`${BASE_URL}/user/preference/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -75,22 +92,20 @@ const NoticeTypeScreen = (props) => {
       if (!response.ok) throw new Error("서버 전송 실패");
 
       console.log("✅ Preferences sent!");
+      dispatch(isSetUp());
+      props.navigation.navigate("Main");
     } catch (error) {
       console.error("❗ Error sending preferences:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    dispatch(isSetUp());
-    setIsLoading(false);
-    props.navigation.navigate("Main");
   };
 
-  const isAllSelected = selected.length === NOTIFICATION_TYPES.length;
+  const isAllSelected = selected.length === types.length;
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>
-        Select the type of notifications you want to classify.
-      </Text>
+      <Text style={styles.title}>받고 싶은 알림 유형을 선택해주세요.</Text>
 
       <View style={styles.selectionBox}>
         <TouchableOpacity style={styles.item} onPress={toggleSelectAll}>
@@ -99,10 +114,10 @@ const NoticeTypeScreen = (props) => {
             size={22}
             color="#333"
           />
-          <Text style={styles.itemText}>SELECT ALL</Text>
+          <Text style={styles.itemText}>전체 선택</Text>
         </TouchableOpacity>
 
-        {NOTIFICATION_TYPES.map((item) => (
+        {types.map((item) => (
           <TouchableOpacity
             key={item.id}
             style={styles.item}
@@ -119,17 +134,39 @@ const NoticeTypeScreen = (props) => {
               color="#555"
               style={{ marginLeft: 10 }}
             />
-            <Text style={styles.itemText}>{item.label.toUpperCase()}</Text>
+            <Text style={styles.itemText}>{item.label}</Text>
           </TouchableOpacity>
         ))}
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View style={styles.inputRow}>
+            <TextInput
+              placeholder="새 알림 유형 추가"
+              placeholderTextColor="#999"
+              style={styles.input}
+              value={newTypeLabel}
+              onChangeText={setNewTypeLabel}
+              autoCorrect={false} // 자동수정 끄기
+              autoCapitalize="none" // 대문자 자동화 끄기
+              keyboardType="default" // 기본 키보드 (한글 지원됨)
+              importantForAutofill="no"
+            />
+            <TouchableOpacity onPress={addCustomType} style={styles.addButton}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>추가</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
       </View>
 
       <Text style={styles.note}>
-        Please note that unmarked notifications are displayed at once.
+        체크하지 않은 알림은 일반 분류로 표시됩니다.
       </Text>
+
       {isLoading ? (
         <ActivityIndicator
-          size={"small"}
+          size="small"
           color={colors.primary}
           style={{ marginTop: 10 }}
         />
@@ -138,7 +175,7 @@ const NoticeTypeScreen = (props) => {
           style={styles.continueButton}
           onPress={handleContinue}
         >
-          <Text style={styles.continueText}>CONTINUE</Text>
+          <Text style={styles.continueText}>계속하기</Text>
           <Icon name="arrow-forward" size={18} color="#fff" />
         </TouchableOpacity>
       )}
@@ -155,7 +192,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#fff",
     fontWeight: "500",
     marginBottom: 16,
@@ -196,5 +233,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginRight: 8,
     fontSize: 16,
+  },
+  inputRow: {
+    flexDirection: "row",
+    marginTop: 14,
+    alignItems: "center",
+  },
+  input: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  addButton: {
+    marginLeft: 10,
+    backgroundColor: "#3546f0",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
   },
 });

@@ -21,7 +21,7 @@ const AuthScreen = () => {
   const [isSignUp, setIsSignUp] = useState(false);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.container}>
       <PageContainer>
         <ScrollView>
           <KeyboardAvoidingView
@@ -53,6 +53,9 @@ const AuthScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   linkContainer: {
     justifyContent: "center",
     alignItems: "center",

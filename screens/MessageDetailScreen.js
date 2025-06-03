@@ -8,6 +8,8 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { updateUserPreference } from "../utils/actions/userActions";
+import { useSelector } from "react-redux";
 
 const formatName = (name) => {
   const match = name.match(/"?([^"<]+)"?\s*<([^>]+)>/);
@@ -16,9 +18,10 @@ const formatName = (name) => {
 
 const MessageDetailScreen = ({ route }) => {
   const { message, onLike } = route.params;
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(message.liked);
+  const { cochat_id } = useSelector((state) => state.auth.userData);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (liked) {
       Alert.alert("이미 좋아요를 누르셨습니다.");
       return;
@@ -32,16 +35,21 @@ const MessageDetailScreen = ({ route }) => {
         {
           text: "반영하기",
           style: "destructive",
-          onPress: () => {
-            setLiked(true);
+          onPress: async () => {
+            console.log(message.gmail_message_id);
 
-            // ✅ 사용자 취향 벡터 업데이트 위치
-            console.log("사용자 취향 벡터 업데이트:", message.id);
-            // TODO: updateUserPreference(message.id);
+            const result = await updateUserPreference(
+              message.gmail_message_id,
+              cochat_id
+            );
 
-            // ✅ 상위 컴포넌트에 콜백 전달 (예: 리스트에서 ❤️ 표시)
-            if (onLike) {
-              onLike(message.id);
+            if (result.success) {
+              setLiked(true);
+              Alert.alert("성공", "좋아요가 반영되었습니다.");
+              onLike?.(message.gmail_message_id);
+            } else {
+              console.warn("서버 응답 문제:", result.status || result.error);
+              Alert.alert("오류", "좋아요 처리 중 문제가 발생했습니다.");
             }
           },
         },
@@ -52,7 +60,6 @@ const MessageDetailScreen = ({ route }) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header with icon and like button */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Icon
@@ -72,19 +79,16 @@ const MessageDetailScreen = ({ route }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Sender */}
       <View style={styles.card}>
         <Text style={styles.label}>Sender</Text>
         <Text style={styles.text}>{formatName(message.sender_id)}</Text>
       </View>
 
-      {/* Receiver */}
       <View style={styles.card}>
         <Text style={styles.label}>Receiver</Text>
         <Text style={styles.text}>{formatName(message.receiver_id)}</Text>
       </View>
 
-      {/* Timestamp */}
       <View style={styles.card}>
         <Text style={styles.label}>Timestamp</Text>
         <Text style={styles.text}>
@@ -92,7 +96,6 @@ const MessageDetailScreen = ({ route }) => {
         </Text>
       </View>
 
-      {/* Content */}
       <View style={styles.card}>
         <Text style={styles.label}>Content</Text>
         <Text style={styles.content}>{message.content}</Text>
@@ -103,6 +106,7 @@ const MessageDetailScreen = ({ route }) => {
 
 export default MessageDetailScreen;
 
+// --- 스타일은 그대로 유지 ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,

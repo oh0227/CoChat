@@ -8,4 +8,5 @@ export default {
   primary: "#201F7E",
   red: "#ff3333",
   beige: "#FEF5C3",
+  bgColor: "#8C8CB9",
 };

@@ -1,4 +1,5 @@
 // components/MessageItem.js
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -22,12 +23,16 @@ const MessageItem = ({
   return (
     <TouchableOpacity onPress={onPress} style={styles.messageRow}>
       <View style={styles.iconWrapper}>
-        <Icon name={icon} size={24} color={iconColor || "#333"} />
+        <MaterialCommunityIcons
+          name={"gmail"}
+          size={24}
+          color={iconColor || "#333"}
+        />
       </View>
       <View style={styles.messageContent}>
         <Text style={styles.sender}>{formatName(sender)}</Text>
         <Text style={styles.sender}>{formatName(receiver)}</Text>
-        <Text style={styles.preview} numberOfLines={1}>
+        <Text style={styles.preview} numberOfLines={5}>
           {content}
         </Text>
       </View>

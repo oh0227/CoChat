@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Linking,
   ScrollView,
+  AppState,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -21,45 +22,58 @@ const MessengerSetupScreen = (props) => {
 
   useEffect(() => {
     props.navigation.setOptions({ headerTitle: "Messenger Selection" });
+    fetchConnectedAccounts();
+
+    // AppState로 앱 복귀 시 계정 정보 다시 불러오기
+    const appStateListener = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        fetchConnectedAccounts();
+      }
+    });
+
+    // 딥링크로 돌아왔을 때 처리
+    const deepLinkListener = Linking.addEventListener("url", (event) => {
+      const url = event.url;
+      if (url.includes("messenger-auth")) {
+        fetchConnectedAccounts();
+      }
+    });
+
+    return () => {
+      appStateListener.remove();
+      deepLinkListener.remove();
+    };
   }, []);
 
-  // 메신저별 로그인 버튼 클릭 시
-  const handleMessengerLogin = async (messengerId) => {
+  const fetchConnectedAccounts = async () => {
     try {
-      // OAuth 로그인 페이지 열기
-      const loginUrl = `${BASE_URL}/${messengerId}/auth/login?cochat_id=${userData.cochat_id}`;
-      await Linking.openURL(loginUrl);
-
-      // 로그인 후 연결된 메신저 계정 정보 받아오기
       const { data } = await axios.get(
         `${BASE_URL}/messenger/cochat_id/${userData.cochat_id}`
       );
-
-      // 새로운 계정 목록 변환
       const newAccounts = data.map((item) => ({
         messenger_name: item.messenger,
         messenger_user_id: item.messenger_user_id,
         access_token: item.access_token,
       }));
+      setConnectedAccounts(newAccounts);
+    } catch (err) {
+      console.error("계정 목록 불러오기 실패:", err);
+    }
+  };
 
-      // 기존 connectedAccounts에 없는 계정만 필터링
-      const uniqueNewAccounts = newAccounts.filter((newItem) => {
-        return !connectedAccounts.some(
-          (existingItem) =>
-            existingItem.messenger_name === newItem.messenger_name &&
-            existingItem.messenger_user_id === newItem.messenger_user_id
-        );
-      });
+  const handleMessengerLogin = async (messengerId) => {
+    try {
+      const redirectUri = "cochat://messenger-auth"; // ✅ 딥링크 URI
 
-      // 병합 후 상태 업데이트
-      const updatedAccounts = [...connectedAccounts, ...uniqueNewAccounts];
-      setConnectedAccounts(updatedAccounts);
+      const loginUrl = `${BASE_URL}/${messengerId}/login?cochat_id=${
+        userData.cochat_id
+      }&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      await Linking.openURL(loginUrl);
     } catch (err) {
       console.error("메신저 로그인 오류:", err);
     }
   };
 
-  // 완료 버튼 클릭 시
   const handleComplete = () => {
     messaging()
       .getToken()
@@ -92,21 +106,16 @@ const MessengerSetupScreen = (props) => {
       <ScrollView style={styles.selectionBox}>
         {MESSENGERS.map((item) => (
           <View key={item.id} style={styles.item}>
-            {/* 아이콘 + 라벨 */}
             <View style={styles.itemHeader}>
               <Icon name={item.icon} size={22} color="#444" />
               <Text style={styles.itemText}>{item.label.toUpperCase()}</Text>
             </View>
-
-            {/* 로그인 버튼 */}
             <TouchableOpacity
               style={styles.loginButton}
               onPress={() => handleMessengerLogin(item.id)}
             >
               <Text style={styles.loginButtonText}>LOGIN</Text>
             </TouchableOpacity>
-
-            {/* 계정 목록 */}
             <View style={styles.accountList}>
               {connectedAccounts
                 .filter((acc) => acc.messenger_name === item.id)
@@ -172,36 +181,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-
   itemText: {
     marginLeft: 10,
     fontSize: 15,
     fontWeight: "500",
     color: "#333",
   },
-
   loginButton: {
     backgroundColor: "#3546f0",
     paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 16,
-    alignSelf: "flex-start", // 왼쪽 정렬
+    alignSelf: "flex-start",
     marginBottom: 6,
   },
-
   loginButtonText: {
     color: "#fff",
     fontWeight: "bold",
   },
-
+  accountList: {
+    marginTop: 8,
+    paddingLeft: 8,
+  },
   connectedText: {
-    color: "#0a0",
+    color: "#333",
     fontSize: 14,
     marginVertical: 2,
-  },
-
-  accountList: {
-    paddingLeft: 6,
   },
   completeButton: {
     backgroundColor: "#1abc9c",
@@ -217,14 +222,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginRight: 8,
-  },
-  accountList: {
-    marginTop: 8,
-    paddingLeft: 8,
-  },
-  connectedText: {
-    color: "#333",
-    fontSize: 14,
-    marginVertical: 2,
   },
 });

@@ -7,19 +7,18 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
 import messaging from "@react-native-firebase/messaging";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchData } from "../utils/actions/messageActions";
 import { addMessage } from "../store/messageSlice";
 import MessageItem from "../components/MessageItem";
+import { updateUserPreference } from "../utils/actions/userActions";
 
 const GroupedMessageScreen = (props) => {
   const dispatch = useDispatch();
   const reduxMessages = useSelector((state) => state.messages.messageData);
   const userData = useSelector((state) => state.auth.userData);
   const [messages, setMessages] = useState([]);
-  const [likedMessages, setLikedMessages] = useState(new Set());
 
   useEffect(() => {
     setMessages(removeDuplicates(reduxMessages));
@@ -28,8 +27,8 @@ const GroupedMessageScreen = (props) => {
   const removeDuplicates = (messages) => {
     const seen = new Set();
     return messages.filter((msg) => {
-      if (seen.has(msg.id)) return false;
-      seen.add(msg.id);
+      if (seen.has(msg.gmail_message_id)) return false;
+      seen.add(msg.gmail_message_id);
       return true;
     });
   };
@@ -55,7 +54,7 @@ const GroupedMessageScreen = (props) => {
       const data = remoteMessage.data;
 
       const newMessage = {
-        id: data.gmail_message_id,
+        gmail_message_id: data.gmail_message_id,
         sender_id: data.sender_id,
         receiver_id: data.receiver_id,
         content: data.content,
@@ -65,6 +64,7 @@ const GroupedMessageScreen = (props) => {
         category: data.category,
         messenger: data.messenger,
         recommended: data.recommended === "true",
+        liked: false,
       };
 
       dispatch(addMessage(newMessage));
@@ -77,14 +77,17 @@ const GroupedMessageScreen = (props) => {
     return unsubscribe;
   }, []);
 
-  useEffect(() => {
-    messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-      // 필요시 처리
-    });
-  }, []);
+  const handleLike = async (msg) => {
+    try {
+      await updateUserPreference(msg.id, userData.cochat_id);
 
-  const handleLike = (id) => {
-    setLikedMessages((prev) => new Set(prev).add(id));
+      // ✅ 로컬 상태 messages 업데이트
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msg.id ? { ...m, liked: true } : m))
+      );
+    } catch (err) {
+      Alert.alert("오류", "좋아요 처리 중 문제가 발생했습니다.");
+    }
   };
 
   return (
@@ -100,18 +103,25 @@ const GroupedMessageScreen = (props) => {
 
           {msgs.map((msg, index) => (
             <MessageItem
-              key={msg.id || index}
+              key={msg.gmail_message_id}
               icon={msg.icon}
               iconColor={msg.iconColor}
               sender={msg.sender_id}
               receiver={msg.receiver_id}
               content={msg.content}
               timestamp={msg.timestamp}
-              liked={likedMessages.has(msg.id)} // ✅ 좋아요 여부 전달
+              liked={msg.liked}
+              onLike={() => handleLike(msg)}
               onPress={() => {
                 props.navigation.navigate("MessageDetail", {
                   message: msg,
-                  onLike: handleLike, // ✅ Detail 화면에서 좋아요 반영되도록 콜백 전달
+                  onLike: (msgId) => {
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === msgId ? { ...m, liked: true } : m
+                      )
+                    );
+                  },
                 });
               }}
             />
@@ -121,7 +131,6 @@ const GroupedMessageScreen = (props) => {
     </ScrollView>
   );
 };
-
 export default GroupedMessageScreen;
 
 const styles = StyleSheet.create({
