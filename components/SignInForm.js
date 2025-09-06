@@ -14,8 +14,8 @@ const isTestMode = true;
 
 const initialState = {
   inputValues: {
-    cochat_id: isTestMode ? "oh0227" : "",
-    password: isTestMode ? "123456" : "",
+    cochat_id: isTestMode ? "boblee123" : "",
+    password: isTestMode ? "boblee123" : "",
   },
   inputValidities: {
     cochat_id: isTestMode,
